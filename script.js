@@ -5,12 +5,19 @@ let inputForm = document.getElementById('inputForm');
 let currentMarkerId = null;
 
 const CLIENT_ID = '804290644688-omr0p98vsiij9lu2hd74ri47no7kpo6s.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
+const SPREADSHEET_ID = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
+
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
-const SPREADSHEET_ID = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
+
+function loadGapi() {
+    gapi.load('client:auth2', initClient);
+}
 
 function initClient() {
     gapi.client.init({
+        apiKey: API_KEY,
         clientId: CLIENT_ID,
         discoveryDocs: DISCOVERY_DOCS,
         scope: SCOPES
@@ -41,11 +48,7 @@ function initMap() {
         showInputForm(event.pixel);
     });
 
-    handleClientLoad();
-}
-
-function handleClientLoad() {
-    gapi.load('client:auth2', initClient);
+    loadGapi();
 }
 
 function showInputForm(pixel) {
@@ -231,8 +234,7 @@ function refreshMarkers() {
                 count: row[5],
                 tag: row[6]
             };
-            const marker = addMarker(markerData);
-            marker.data = markerData;
+            addMarker(markerData);
         });
     }, (error) => {
         console.error(error);
