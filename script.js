@@ -5,7 +5,8 @@ let inputForm = document.getElementById('inputForm');
 let currentMarkerId = null;
 
 const CLIENT_ID = '804290644688-omr0p98vsiij9lu2hd74ri47no7kpo6s.apps.googleusercontent.com';
-const API_KEY = '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';
+const CLIENT_SECRET = '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';
+const API_KEY = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
 const SPREADSHEET_ID = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
 
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
@@ -19,6 +20,7 @@ function initClient() {
     gapi.client.init({
         apiKey: API_KEY,
         clientId: CLIENT_ID,
+        clientSecret: CLIENT_SECRET
         discoveryDocs: DISCOVERY_DOCS,
         scope: SCOPES
     }).then(() => {
