@@ -178,7 +178,7 @@ function getColorByTag(tag) {
 
 function getMarkerIcon(color) {
     return {
-        path: 'M 0,0 L 8,0 L 5,3 L 6,9 L 0,6 L -6,9 L -5,3 L -8,0 L 0,0 Z',
+        path: 'M 0,-48 14,-14 47,-14 23,7 29,40 0,20 -29,40 -23,7 -47,-14 -14,-14 Z',
         fillColor: color,
         fillOpacity: 0.8,
         strokeWeight: 1,
