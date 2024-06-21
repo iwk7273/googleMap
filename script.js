@@ -4,45 +4,13 @@ let markers = [];
 let inputForm = document.getElementById('inputForm');
 let currentMarkerId = null;
 
-const CLIENT_ID = '804290644688-omr0p98vsiij9lu2hd74ri47no7kpo6s.apps.googleusercontent.com';
-const CLIENT_SECRET = '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';
-const API_KEY = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
-const SPREADSHEET_ID = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
-
-const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets";
-
-function loadGapi() {
-    gapi.load('client:auth2', initClient);
-}
-
-function initClient() {
-    gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-    }).then(() => {
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-    }, (error) => {
-        console.log(JSON.stringify(error, null, 2));
-    });
-}
-
-function updateSigninStatus(isSignedIn) {
-    if (isSignedIn) {
-        refreshMarkers();
-    } else {
-        gapi.auth2.getAuthInstance().signIn();
-    }
-}
+const API_KEY = 'YOUR_API_KEY';
+const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';
 
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 35.728611, lng: 139.710278 }, // 池袋駅の座標
-        zoom: 7
+        center: { lat: -25.344, lng: 131.036 },
+        zoom: 4
     });
 
     map.addListener('click', (event) => {
@@ -50,12 +18,13 @@ function initMap() {
         showInputForm(event.pixel);
     });
 
-    loadGapi();
+    // 初回読み込み時にスプレッドシートからマーカーを読み込む
+    refreshMarkers();
 }
 
 function showInputForm(pixel) {
     const now = new Date();
-    const timestamp = (now.getMonth() + 1) + '/' + now.getDate() + ' ' + now.getHours() + ':' + now.getMinutes();
+    const timestamp = now.getMonth() + 1 + '/' + now.getDate() + ' ' + now.getHours() + ':' + now.getMinutes();
     document.getElementById('timestamp').value = timestamp;
 
     inputForm.style.left = pixel.x + 'px';
@@ -74,30 +43,19 @@ function saveData() {
     const count = document.getElementById('count').value;
     const tag = document.getElementById('tag').value;
 
+    const markerData = {
+        id: currentMarkerId !== null ? currentMarkerId : markers.length + 1,
+        lat: currentLocation.lat(),
+        lng: currentLocation.lng(),
+        nickname: nickname,
+        count: count,
+        tag: tag
+    };
+
     if (currentMarkerId !== null) {
-        const markerData = {
-            id: currentMarkerId,
-            lat: currentLocation.lat(),
-            lng: currentLocation.lng(),
-            timestamp: timestamp,
-            nickname: nickname,
-            count: count,
-            tag: tag
-        };
-        updateMarker(markerData);
+        updateMarker(currentMarkerId, markerData);
     } else {
-        fetchRowCount().then(rowCount => {
-            const markerData = {
-                id: rowCount + 1,
-                lat: currentLocation.lat(),
-                lng: currentLocation.lng(),
-                timestamp: timestamp,
-                nickname: nickname,
-                count: count,
-                tag: tag
-            };
-            addMarker(markerData);
-        });
+        addMarker(markerData);
     }
 
     inputForm.style.display = 'none';
@@ -121,8 +79,8 @@ function addMarker(data) {
     saveToSheet(data);
 }
 
-function updateMarker(data) {
-    const marker = markers.find(m => m.data.id === data.id);
+function updateMarker(id, data) {
+    const marker = markers[id];
     marker.setPosition({ lat: data.lat, lng: data.lng });
     marker.setIcon(getMarkerIcon(getColorByTag(data.tag)));
 
@@ -130,7 +88,7 @@ function updateMarker(data) {
         showInfoWindow(marker, data);
     });
 
-    updateSheet(data.id, data);
+    updateSheet(id, data);
 }
 
 function showInfoWindow(marker, data) {
@@ -140,7 +98,7 @@ function showInfoWindow(marker, data) {
             <p>時刻: ${data.timestamp}</p>
             <p>枚数: ${data.count}</p>
             <p>タグ: ${data.tag}</p>
-            <button onclick="editMarker(${data.id})">編集</button>
+            <button onclick="editMarker(${markers.indexOf(marker)})">編集</button>
         </div>
     `;
 
@@ -152,16 +110,20 @@ function showInfoWindow(marker, data) {
 }
 
 function editMarker(id) {
-    const markerData = markers.find(m => m.data.id === id).data;
-    currentLocation = { lat: markerData.lat, lng: markerData.lng };
+    const marker = markers[id];
+    const position = marker.getPosition();
+    const latLng = { lat: position.lat(), lng: position.lng() };
+    currentLocation = latLng;
     currentMarkerId = id;
 
-    document.getElementById('timestamp').value = markerData.timestamp;
-    document.getElementById('nickname').value = markerData.nickname;
-    document.getElementById('count').value = markerData.count;
-    document.getElementById('tag').value = markerData.tag;
+    const data = getMarkerDataFromSheet(id);
 
-    const pixel = map.getProjection().fromLatLngToPoint(new google.maps.LatLng(currentLocation.lat, currentLocation.lng));
+    document.getElementById('timestamp').value = data.timestamp;
+    document.getElementById('nickname').value = data.nickname;
+    document.getElementById('count').value = data.count;
+    document.getElementById('tag').value = data.tag;
+
+    const pixel = map.getProjection().fromLatLngToPoint(currentLocation);
     showInputForm({ x: pixel.x, y: pixel.y });
 }
 
@@ -180,75 +142,72 @@ function getColorByTag(tag) {
 
 function getMarkerIcon(color) {
     return {
-        path: 'M 0,-48 14,-14 47,-14 23,7 29,40 0,20 -29,40 -23,7 -47,-14 -14,-14 Z',
+        path: google.maps.SymbolPath.CIRCLE,
         fillColor: color,
-        fillOpacity: 0.8,
-        strokeWeight: 1,
-        scale: 1.5
+        fillOpacity: 0.6,
+        strokeWeight: 0,
+        scale: 10
     };
 }
 
 function saveToSheet(data) {
-    gapi.client.sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: 'Sheet1!A:F',
-        valueInputOption: 'RAW',
-        resource: {
+    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:F:append?valueInputOption=RAW&key=${API_KEY}`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
             values: [[data.id, data.lat, data.lng, data.nickname, data.count, data.tag]]
-        }
-    }).then((response) => {
-        console.log(response);
-    }, (error) => {
-        console.error(error);
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
     });
 }
 
 function updateSheet(id, data) {
-    gapi.client.sheets.spreadsheets.values.update({
-        spreadsheetId: SPREADSHEET_ID,
-        range: `Sheet1!A${parseInt(id) + 1}:F${parseInt(id) + 1}`,
-        valueInputOption: 'RAW',
-        resource: {
+    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A${parseInt(id) + 1}:F${parseInt(id) + 1}?valueInputOption=RAW&key=${API_KEY}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
             values: [[id, data.lat, data.lng, data.nickname, data.count, data.tag]]
-        }
-    }).then((response) => {
-        console.log(response);
-    }, (error) => {
-        console.error(error);
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
     });
 }
 
 function refreshMarkers() {
-    gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: 'Sheet1!A:F',
-    }).then(response => {
-        const rows = response.result.values;
-        markers.forEach(marker => marker.setMap(null));
-        markers = [];
-        rows.forEach((row, index) => {
-            const markerData = {
-                id: row[0],
-                lat: parseFloat(row[1]),
-                lng: parseFloat(row[2]),
-                timestamp: row[3],
-                nickname: row[4],
-                count: row[5],
-                tag: row[6]
-            };
-            addMarker(markerData);
+    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:F?key=${API_KEY}`)
+        .then(response => response.json())
+        .then(data => {
+            const rows = data.values;
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            rows.forEach((row, index) => {
+                const markerData = {
+                    id: row[0],
+                    lat: parseFloat(row[1]),
+                    lng: parseFloat(row[2]),
+                    nickname: row[3],
+                    count: row[4],
+                    tag: row[5]
+                };
+                addMarker(markerData);
+            });
+        })
+        .catch((error) => {
+            console.error('Error:', error);
         });
-    }, (error) => {
-        console.error(error);
-    });
-}
-
-function fetchRowCount() {
-    return gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: SPREADSHEET_ID,
-        range: 'Sheet1!A:A',
-    }).then(response => {
-        const rows = response.result.values;
-        return rows ? rows.length : 0;
-    });
 }
