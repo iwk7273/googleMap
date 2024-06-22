@@ -157,7 +157,7 @@ async function savePin() {
             fillColor: color,
             fillOpacity: 0.6,
             strokeWeight: 0,
-            scale: 10
+            scale: scale
         });
         editingPin.setTitle(nickname);
 
@@ -172,7 +172,7 @@ async function savePin() {
                 fillColor: color,
                 fillOpacity: 0.6,
                 strokeWeight: 0,
-                scale: 50
+                scale: scale
             },
             title: nickname
         });
@@ -353,7 +353,7 @@ async function loadPins() {
                         fillColor: color,
                         fillOpacity: 0.6,
                         strokeWeight: 0,
-                        scale: 10
+                        scale: scale
                     },
                     title: nickname
                 });
