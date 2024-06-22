@@ -263,9 +263,10 @@ function showPinInfo(marker, data) {
             <p>時刻: ${data.time}</p>
             <p>タグ: ${data.tag}</p>
             <button onclick="editPin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">編集</button>
+            <button onclick="deletePin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">削除</button>
         </div>
     `;
-    //<! -- <button onclick="deletePin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">削除</button>
+    //<! -- 
     const infoWindow = new google.maps.InfoWindow({
         content: infoWindowContent
     });
@@ -289,11 +290,11 @@ async function editPin(time, lat, lng, nickname, count, tag) {
 async function deletePin(time, lat, lng) {
     const accessToken = await getAccessToken();
     const range = `${sheetName}!A1:F`;
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            //method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const data = await response.json();
