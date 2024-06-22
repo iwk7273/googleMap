@@ -4,8 +4,8 @@ const apiKey = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
 const clientId = '804290644688-godfemc6ue7b06p9e5oqt2fhj2pgqnh0.apps.googleusercontent.com';
 const clientSecret = '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';
 const refreshToken = '1//0eB4LQQg3jSGRCgYIARAAGA4SNwF-L9Irsju_WwAkECjqOOiJukwNnQZvzvKh4xQyAL9-bvFGzUFCStH826eaNBh36m1KhbrNXqQ';
-const size = 1 / 10000
-const pow = 5
+const size = 1 / 3000000
+const pow = 7
 
 let map;
 let markers = [];
