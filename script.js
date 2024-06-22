@@ -109,8 +109,8 @@ async function getAccessToken() {
 
 async function savePin() {
     const time = document.getElementById('time').value;
-    const nickname = document.getElementById('nickname').value;
-    const count = document.getElementById('count').value;
+    const nickname = '';
+    const count = '';
     const tag = document.getElementById('tag').value;
     const lat = document.getElementById('form').dataset.lat;
     const lng = document.getElementById('form').dataset.lng;
