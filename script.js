@@ -1,213 +1,318 @@
-let map;
-let currentLocation;
-let markers = [];
-let inputForm = document.getElementById('inputForm');
-let currentMarkerId = null;
+const spreadsheetId = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
+const sheetName = 'Sheet1';
+const apiKey = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
+const clientId = '804290644688-godfemc6ue7b06p9e5oqt2fhj2pgqnh0.apps.googleusercontent.com';
+const clientSecret = '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';
+const refreshToken = '1//0eB4LQQg3jSGRCgYIARAAGA4SNwF-L9Irsju_WwAkECjqOOiJukwNnQZvzvKh4xQyAL9-bvFGzUFCStH826eaNBh36m1KhbrNXqQ';
 
-const API_KEY = 'YOUR_API_KEY';
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID';
+let map;
+let markers = [];
+let currentMarker = null;
+let editingPin = null;
 
 function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: -25.344, lng: 131.036 },
-        zoom: 4
+        center: { lat: 35.681236, lng: 139.767125 },
+        zoom: 10,
     });
 
     map.addListener('click', (event) => {
-        currentLocation = event.latLng;
-        showInputForm(event.pixel);
+        const latLng = event.latLng;
+        showForm(latLng);
     });
 
-    // 初回読み込み時にスプレッドシートからマーカーを読み込む
-    refreshMarkers();
+    document.getElementById('update-button').addEventListener('click', () => {
+        loadPins();
+    });
+
+    document.getElementById('submit-button').addEventListener('click', savePin);
+    document.getElementById('cancel-button').addEventListener('click', hideForm);
+
+    loadPins();
 }
 
-function showInputForm(pixel) {
+function showForm(latLng) {
+    const form = document.getElementById('form');
     const now = new Date();
-    const timestamp = now.getMonth() + 1 + '/' + now.getDate() + ' ' + now.getHours() + ':' + now.getMinutes();
-    document.getElementById('timestamp').value = timestamp;
+    const year = now.getFullYear();
+    const month = ('0' + (now.getMonth() + 1)).slice(-2);
+    const day = ('0' + now.getDate()).slice(-2);
+    const hours = ('0' + now.getHours()).slice(-2);
+    const minutes = ('0' + now.getMinutes()).slice(-2);
+    const seconds = ('0' + now.getSeconds()).slice(-2);
+    const milliseconds = ('00' + now.getMilliseconds()).slice(-3);
+    const time = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}:${milliseconds}`;
 
-    inputForm.style.left = pixel.x + 'px';
-    inputForm.style.top = pixel.y + 'px';
-    inputForm.style.display = 'block';
+    document.getElementById('time').value = time;
+    form.style.display = 'block';
+    form.dataset.lat = latLng.lat();
+    form.dataset.lng = latLng.lng();
+    editingPin = null;
 }
 
-function cancelForm() {
-    inputForm.style.display = 'none';
-    currentMarkerId = null;
+function hideForm() {
+    document.getElementById('form').style.display = 'none';
 }
 
-function saveData() {
-    const timestamp = document.getElementById('timestamp').value;
+async function getAccessToken() {
+    const url = "https://www.googleapis.com/oauth2/v4/token";
+    const headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    const body = new URLSearchParams({
+        'refresh_token': refreshToken,
+        'client_id': clientId,
+        'client_secret': clientSecret,
+        'grant_type': 'refresh_token',
+        'redirect_uri': 'http://localhost:8080'
+    });
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: body.toString()
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        return data.access_token;
+    } catch (error) {
+        console.error('Error:', error);
+        return null;
+    }
+}
+
+async function savePin() {
+    const time = document.getElementById('time').value;
     const nickname = document.getElementById('nickname').value;
     const count = document.getElementById('count').value;
     const tag = document.getElementById('tag').value;
+    const lat = document.getElementById('form').dataset.lat;
+    const lng = document.getElementById('form').dataset.lng;
 
-    const markerData = {
-        id: currentMarkerId !== null ? currentMarkerId : markers.length + 1,
-        lat: currentLocation.lat(),
-        lng: currentLocation.lng(),
-        nickname: nickname,
-        count: count,
-        tag: tag
-    };
+    const color = tag === '完了' ? 'red' : tag === '予定' ? 'blue' : 'gray';
 
-    if (currentMarkerId !== null) {
-        updateMarker(currentMarkerId, markerData);
+    if (editingPin) {
+        // Update existing marker
+        editingPin.setIcon({
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: color,
+            fillOpacity: 0.6,
+            strokeWeight: 0,
+            scale: 10
+        });
+        editingPin.setTitle(nickname);
+
+        await updatePinInSheet(time, lat, lng, nickname, count, tag);
     } else {
-        addMarker(markerData);
+        // Create new marker
+        const marker = new google.maps.Marker({
+            position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+            map,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: color,
+                fillOpacity: 0.6,
+                strokeWeight: 0,
+                scale: 10
+            },
+            title: nickname
+        });
+
+        marker.addListener('click', () => {
+            showPinInfo(marker, { time, nickname, count, tag });
+        });
+
+        markers.push(marker);
+
+        const accessToken = await getAccessToken();
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED`;
+        const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+        };
+        const body = {
+            values: [[time, lat, lng, nickname, count, tag]]
+        };
+
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to save pin to spreadsheet');
+            }
+
+            hideForm();
+        } catch (error) {
+            console.error('Error:', error);
+        }
     }
-
-    inputForm.style.display = 'none';
-    currentMarkerId = null;
 }
 
-function addMarker(data) {
-    const color = getColorByTag(data.tag);
-    const marker = new google.maps.Marker({
-        position: { lat: data.lat, lng: data.lng },
-        map: map,
-        icon: getMarkerIcon(color)
-    });
+async function updatePinInSheet(time, lat, lng, nickname, count, tag) {
+    const accessToken = await getAccessToken();
+    const range = `${sheetName}!A1:F`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
 
-    marker.addListener('click', () => {
-        showInfoWindow(marker, data);
-    });
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        const data = await response.json();
 
-    markers.push(marker);
+        if (!data.values) {
+            throw new Error('No data found in spreadsheet');
+        }
 
-    saveToSheet(data);
+        const rowIndex = data.values.findIndex(row => row[0] === time);
+
+        if (rowIndex !== -1) {
+            const updateUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A${rowIndex + 1}:F${rowIndex + 1}?valueInputOption=USER_ENTERED`;
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            };
+            const body = {
+                values: [[time, lat, lng, nickname, count, tag]]
+            };
+
+            const updateResponse = await fetch(updateUrl, {
+                method: 'PUT',
+                headers: headers,
+                body: JSON.stringify(body)
+            });
+
+            if (!updateResponse.ok) {
+                throw new Error('Failed to update pin in spreadsheet');
+            }
+
+            hideForm();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
 
-function updateMarker(id, data) {
-    const marker = markers[id];
-    marker.setPosition({ lat: data.lat, lng: data.lng });
-    marker.setIcon(getMarkerIcon(getColorByTag(data.tag)));
-
-    marker.addListener('click', () => {
-        showInfoWindow(marker, data);
-    });
-
-    updateSheet(id, data);
-}
-
-function showInfoWindow(marker, data) {
-    const contentString = `
+function showPinInfo(marker, data) {
+    const infoWindowContent = `
         <div>
-            <h3>${data.nickname}</h3>
-            <p>時刻: ${data.timestamp}</p>
+            <p>時刻: ${data.time}</p>
+            <p>ニックネーム: ${data.nickname}</p>
             <p>枚数: ${data.count}</p>
             <p>タグ: ${data.tag}</p>
-            <button onclick="editMarker(${markers.indexOf(marker)})">編集</button>
+            <button onclick="editPin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">編集</button>
         </div>
     `;
-
-    const infowindow = new google.maps.InfoWindow({
-        content: contentString
+    //<! -- <button onclick="deletePin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">削除</button>
+    const infoWindow = new google.maps.InfoWindow({
+        content: infoWindowContent
     });
-
-    infowindow.open(map, marker);
+    infoWindow.open(map, marker);
 }
 
-function editMarker(id) {
-    const marker = markers[id];
-    const position = marker.getPosition();
-    const latLng = { lat: position.lat(), lng: position.lng() };
-    currentLocation = latLng;
-    currentMarkerId = id;
+async function editPin(time, lat, lng, nickname, count, tag) {
+    document.getElementById('time').value = time;
+    document.getElementById('nickname').value = nickname;
+    document.getElementById('count').value = count;
+    document.getElementById('tag').value = tag;
 
-    const data = getMarkerDataFromSheet(id);
+    const form = document.getElementById('form');
+    form.style.display = 'block';
+    form.dataset.lat = lat;
+    form.dataset.lng = lng;
 
-    document.getElementById('timestamp').value = data.timestamp;
-    document.getElementById('nickname').value = data.nickname;
-    document.getElementById('count').value = data.count;
-    document.getElementById('tag').value = data.tag;
+    editingPin = markers.find(marker => marker.getPosition().lat() === parseFloat(lat) && marker.getPosition().lng() === parseFloat(lng));
+}   
 
-    const pixel = map.getProjection().fromLatLngToPoint(currentLocation);
-    showInputForm({ x: pixel.x, y: pixel.y });
-}
+async function deletePin(time, lat, lng) {
+    const accessToken = await getAccessToken();
+    const range = `${sheetName}!A1:F`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
 
-function getColorByTag(tag) {
-    switch (tag) {
-        case '完了':
-            return 'red';
-        case '予定':
-            return 'blue';
-        case '不可':
-            return 'gray';
-        default:
-            return 'black';
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const data = await response.json();
+        const rowIndex = data.values.findIndex(row => row[0] === time && parseFloat(row[1]) === parseFloat(lat) && parseFloat(row[2]) === parseFloat(lng));
+
+        if (rowIndex !== -1) {
+            const deleteUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A${rowIndex + 1}:F${rowIndex + 1}:clear`;
+            const deleteResponse = await fetch(deleteUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${accessToken}` }
+            });
+
+            if (deleteResponse.ok) {
+                const markerIndex = markers.findIndex(marker => marker.getPosition().lat() === parseFloat(lat) && marker.getPosition().lng() === parseFloat(lng));
+                if (markerIndex !== -1) {
+                    markers[markerIndex].setMap(null);
+                    markers.splice(markerIndex, 1);
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
     }
 }
 
-function getMarkerIcon(color) {
-    return {
-        path: google.maps.SymbolPath.CIRCLE,
-        fillColor: color,
-        fillOpacity: 0.6,
-        strokeWeight: 0,
-        scale: 10
-    };
-}
+async function loadPins() {
+    const accessToken = await getAccessToken();
+    const range = `${sheetName}!A1:F`;
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
 
-function saveToSheet(data) {
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:F:append?valueInputOption=RAW&key=${API_KEY}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            values: [[data.id, data.lat, data.lng, data.nickname, data.count, data.tag]]
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Success:', data);
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-}
+    try {
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        const data = await response.json();
 
-function updateSheet(id, data) {
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A${parseInt(id) + 1}:F${parseInt(id) + 1}?valueInputOption=RAW&key=${API_KEY}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            values: [[id, data.lat, data.lng, data.nickname, data.count, data.tag]]
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        console.log('Success:', data);
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
-}
-
-function refreshMarkers() {
-    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Sheet1!A:F?key=${API_KEY}`)
-        .then(response => response.json())
-        .then(data => {
-            const rows = data.values;
+        if (data.values && data.values.length > 1) {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
-            rows.forEach((row, index) => {
-                const markerData = {
-                    id: row[0],
-                    lat: parseFloat(row[1]),
-                    lng: parseFloat(row[2]),
-                    nickname: row[3],
-                    count: row[4],
-                    tag: row[5]
-                };
-                addMarker(markerData);
-            });
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+
+            for (let i = 1; i < data.values.length; i++) {
+                const row = data.values[i];
+                const [time, lat, lng, nickname, count, tag] = row;
+                const color = tag === '完了' ? 'red' : tag === '予定' ? 'blue' : 'gray';
+
+                const marker = new google.maps.Marker({
+                    position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                    map,
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: color,
+                        fillOpacity: 0.6,
+                        strokeWeight: 0,
+                        scale: 10
+                    },
+                    title: nickname
+                });
+
+                marker.addListener('click', () => {
+                    showPinInfo(marker, { time, nickname, count, tag });
+                });
+
+                markers.push(marker);
+            }
+        }
+    } catch (error) {
+        console.error('Error:', error);
+    }
 }
+
+window.onload = initMap;
