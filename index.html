@@ -1,29 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <title>Google Maps - Add Marker with Info Window and Google Sheets Integration</title>
-    <link rel="stylesheet" href="styles.css">
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+    <meta charset="UTF-8">
+    <title>Map Pin Manager</title>
+    <style>
+        #map {
+            height: 90vh;
+            width: 100%;
+        }
+        #form {
+            display: none;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border: 1px solid black;
+            z-index: 5;
+        }
+        #form label {
+            display: block;
+            margin-top: 5px;
+        }
+        #update-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 5;
+        }
+    </style>
 </head>
 <body>
     <div id="map"></div>
-    <button id="refreshButton" onclick="refreshMarkers()">更新</button>
-    <div id="inputForm">
-        <label for="timestamp">時刻:</label>
-        <input type="text" id="timestamp" name="timestamp" readonly><br>
-        <label for="nickname">ニックネーム:</label>
-        <input type="text" id="nickname" name="nickname"><br>
-        <label for="count">枚数:</label>
-        <input type="number" id="count" name="count"><br>
-        <label for="tag">タグ:</label>
-        <select id="tag" name="tag">
-            <option value="完了">完了</option>
-            <option value="予定">予定</option>
-            <option value="不可">不可</option>
-        </select><br>
-        <button onclick="saveData()">送信</button>
-        <button onclick="cancelForm()">キャンセル</button>
+    <button id="update-button">更新</button>
+    <div id="form">
+        <label>時刻: <input type="text" id="time" readonly></label>
+        <label>ニックネーム: <input type="text" id="nickname"></label>
+        <label>枚数: <input type="text" id="count"></label>
+        <label>タグ:
+            <select id="tag">
+                <option value="完了">完了</option>
+                <option value="予定">予定</option>
+                <option value="不可">不可</option>
+            </select>
+        </label>
+        <button id="submit-button">送信</button>
+        <button id="cancel-button">キャンセル</button>
     </div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0"></script>
     <script src="script.js"></script>
 </body>
 </html>
