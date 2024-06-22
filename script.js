@@ -274,8 +274,8 @@ function showPinInfo(marker, data) {
 
 async function editPin(time, lat, lng, nickname, count, tag) {
     document.getElementById('time').value = time;
-    document.getElementById('nickname').value = "";
-    document.getElementById('count').value = "";
+    //document.getElementById('nickname').value = "";
+    //document.getElementById('count').value = "";
     document.getElementById('tag').value = tag;
 
     const form = document.getElementById('form');
