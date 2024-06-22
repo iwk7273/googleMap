@@ -119,7 +119,7 @@ async function savePin() {
                 fillColor: color,
                 fillOpacity: 0.6,
                 strokeWeight: 0,
-                scale: 10
+                scale: 50
             },
             title: nickname
         });
