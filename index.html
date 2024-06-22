@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Map Pin Manager</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         #map {
             height: 90vh;
@@ -17,16 +18,28 @@
             padding: 10px;
             border: 1px solid black;
             z-index: 5;
+            max-width: 90%;
+            font-size: 16px;
         }
         #form label {
             display: block;
             margin-top: 5px;
         }
+        #form input, #form select {
+            width: 100%;
+            font-size: 16px;
+        }
+        #form button {
+            width: 48%;
+            font-size: 16px;
+            margin-top: 5px;
+        }
         #update-button {
             position: absolute;
             top: 10px;
-            left: 10px;
+            right: 10px;
             z-index: 5;
+            font-size: 16px;
         }
     </style>
 </head>
@@ -35,16 +48,19 @@
     <button id="update-button">更新</button>
     <div id="form">
         <label>時刻: <input type="text" id="time" readonly></label>
+        <label>ニックネーム: <input type="text" id="nickname"></label>
+        <label>枚数: <input type="text" id="count"></label>
         <label>タグ:
             <select id="tag">
                 <option value="完了">完了</option>
                 <option value="予定">予定</option>
+                <option value="不可">不可</option>
             </select>
         </label>
         <button id="submit-button">送信</button>
         <button id="cancel-button">キャンセル</button>
     </div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
     <script src="script.js"></script>
 </body>
 </html>
