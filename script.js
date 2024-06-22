@@ -4,6 +4,8 @@ const apiKey = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
 const clientId = '804290644688-godfemc6ue7b06p9e5oqt2fhj2pgqnh0.apps.googleusercontent.com';
 const clientSecret = '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';
 const refreshToken = '1//0eB4LQQg3jSGRCgYIARAAGA4SNwF-L9Irsju_WwAkECjqOOiJukwNnQZvzvKh4xQyAL9-bvFGzUFCStH826eaNBh36m1KhbrNXqQ';
+const size = 1 / 10000
+const pow = 5
 
 let map;
 let markers = [];
@@ -21,6 +23,10 @@ function initMap() {
         showForm(latLng);
     });
 
+    map.addListener('zoom_changed', () => {
+        updateMarkerScale();
+    });
+
     document.getElementById('update-button').addEventListener('click', () => {
         loadPins();
     });
@@ -30,6 +36,20 @@ function initMap() {
 
     loadPins();
 }
+
+function updateMarkerScale() {
+    const zoomLevel = map.getZoom();
+    const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
+
+
+    markers.forEach(marker => {
+        const icon = marker.getIcon();
+        icon.scale = scale;
+        console.log(scale)
+        marker.setIcon(icon);
+    });
+}
+
 
 function showForm(latLng) {
     const form = document.getElementById('form');
@@ -96,6 +116,9 @@ async function savePin() {
     const lng = document.getElementById('form').dataset.lng;
 
     const color = tag === '完了' ? 'red' : tag === '予定' ? 'blue' : 'gray';
+
+    const zoomLevel = map.getZoom();
+    const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
 
     if (editingPin) {
         // Update existing marker
@@ -208,8 +231,6 @@ function showPinInfo(marker, data) {
     const infoWindowContent = `
         <div>
             <p>時刻: ${data.time}</p>
-            <p>ニックネーム: ${data.nickname}</p>
-            <p>枚数: ${data.count}</p>
             <p>タグ: ${data.tag}</p>
             <button onclick="editPin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">編集</button>
         </div>
@@ -284,6 +305,9 @@ async function loadPins() {
         if (data.values && data.values.length > 1) {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
+
+            const zoomLevel = map.getZoom();
+            const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
 
             for (let i = 1; i < data.values.length; i++) {
                 const row = data.values[i];
