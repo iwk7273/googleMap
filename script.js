@@ -23,6 +23,8 @@ function initMap() {
         showForm(latLng);
     });
 
+    document.getElementById('cancel-button').addEventListener('click', cancelForm);
+
     map.addListener('zoom_changed', () => {
         updateMarkerScale();
     });
@@ -50,6 +52,14 @@ function updateMarkerScale() {
     });
 }
 
+function cancelForm() {
+    hideForm();
+    if (currentMarker) {
+        currentMarker.setMap(null);
+        currentMarker = null;
+    }
+}
+
 
 function showForm(latLng) {
     const form = document.getElementById('form');
@@ -65,13 +75,33 @@ function showForm(latLng) {
 
     document.getElementById('time').value = time;
     form.style.display = 'block';
+    form.style.left = `${latLng.x}px`;
+    form.style.top = `${latLng.y}px`;
     form.dataset.lat = latLng.lat();
     form.dataset.lng = latLng.lng();
+
+    // 仮のピンを追加
+    if (currentMarker) {
+        currentMarker.setMap(null);
+    }
+    currentMarker = new google.maps.Marker({
+        position: latLng,
+        map,
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: 'gray',
+            fillOpacity: 0.6,
+            strokeWeight: 0,
+            scale: 10
+        }
+    });
+
     editingPin = null;
 }
 
 function hideForm() {
     document.getElementById('form').style.display = 'none';
+    //currentMarker = null;
 }
 
 async function getAccessToken() {
