@@ -298,7 +298,7 @@ async function deletePin(time, lat, lng) {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const data = await response.json();
-        const rowIndex = data.values.findIndex(row => row[0] === time && parseFloat(row[1]) === parseFloat(lat) && parseFloat(row[2]) === parseFloat(lng));
+        const rowIndex = data.values.findIndex(row => row[0] === time);
 
         if (rowIndex !== -1) {
             const deleteUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A${rowIndex + 1}:F${rowIndex + 1}:clear`;
