@@ -2,14 +2,14 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Map Pin Manager</title>
+    <title>【石丸伸二後援会】ポスティングマップ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         #map {
             height: 90vh;
             width: 100%;
         }
-        #form {
+        #form, #formPolygon {
             display: none;
             position: absolute;
             top: 10px;
@@ -21,15 +21,15 @@
             max-width: 90%;
             font-size: 16px;
         }
-        #form label {
+        #form label, #formPolygon label {
             display: block;
             margin-top: 5px;
         }
-        #form input, #form select {
+        #form input, #form select , #formPolygon input, #formPolygon select{
             width: 100%;
             font-size: 16px;
         }
-        #form button {
+        #form button, #formPolygon button {
             width: 48%;
             font-size: 16px;
             margin-top: 5px;
@@ -37,10 +37,20 @@
         #update-button {
             position: absolute;
             top: 10px;
-            right: 10px;
+            right: 20px;
             z-index: 5;
             font-size: 16px;
         }
+        #search-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 5;
+            width: 240px;
+            padding: 5px;
+            font-size: 16px;
+        }
+</style>
     </style>
 </head>
 <body>
@@ -48,6 +58,7 @@
     <button id="update-button">更新</button>
     <div id="form">
         <label>時刻: <input type="text" id="time" readonly></label>
+        <lavel>メモ: <input type="text" id="memo"></lavel>
         <label>タグ:
             <select id="tag">
                 <option value="完了">完了</option>
@@ -57,7 +68,28 @@
         <button id="submit-button">送信</button>
         <button id="cancel-button">キャンセル</button>
     </div>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0"></script>
+    <div id="formPolygon">
+        <label>時刻: <input type="text" id="timePolygon" readonly></label>
+        <lavel>メモ: <input type="text" id="memoPolygon"></lavel>
+        <label>タグ:
+            <select id="tagPolygon">
+                <option value="完了">完了</option>
+                <option value="予定">予定</option>
+            </select>
+        </label>
+        <button id="submit-button-polygon">送信</button>
+        <button id="cancel-button-polygon">キャンセル</button>
+    </div>
+    <ul>
+        <li>2024/06/24 v1.0: 初版リリース</li>
+        <li>2024/06/26 v1.1:
+            <ul>
+                <li>ピンの色を紫、灰色に変更</li>
+                <li>ポリゴン(多角形)の対応</li>
+            </ul>
+        </li>
+    </ul>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0&libraries=drawing"></script>
     <script src="script.js"></script>
 </body>
 </html>
