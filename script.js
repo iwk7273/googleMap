@@ -7,9 +7,10 @@ const refreshToken = '1//0eB4LQQg3jSGRCgYIARAAGA4SNwF-L9Irsju_WwAkECjqOOiJukwNnQ
 
 const sheetName = 'Sheet1';
 const sheetPolygon = 'Polygon'
+
 const size = 1 / 50000000
 const pow = 8
-
+const zoomThreshold = 1; 
 
 let map;
 let markers = []
@@ -28,6 +29,7 @@ function initMap() {
         center: { lat: 35.681236, lng: 139.767125 },
         zoom: 10,
     });
+    let lastZoomLevel = map.getZoom();
 
     map.addListener('click', (event) => {
         const latLng = event.latLng;
@@ -38,7 +40,13 @@ function initMap() {
     });
 
     map.addListener('zoom_changed', () => {
-        updateMarkerScale();
+        const newZoomLevel = map.getZoom();
+        //console.log(newZoomLevel)
+        if (Math.abs(newZoomLevel - lastZoomLevel) >= zoomThreshold) {
+            lastZoomLevel = newZoomLevel;
+            const newScale = calculateScale(newZoomLevel);
+            updateMarkerScale(newScale);
+        }
     });
 
     document.getElementById('update-button').addEventListener('click', () => {
@@ -97,15 +105,14 @@ function polygonOntion(color){
         zIndex: 1,
     }    
 }
+function calculateScale(zoomLevel) {
+    return zoomLevel ** pow * size;
+}
 
-function updateMarkerScale() {
-    const zoomLevel = map.getZoom();
-    const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
-
+function updateMarkerScale(scale) {
     markers.forEach(marker => {
         const icon = marker.getIcon();
         icon.scale = scale;
-        //console.log(scale)
         marker.setIcon(icon);
     });
 }
