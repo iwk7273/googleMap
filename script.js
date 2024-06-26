@@ -74,7 +74,7 @@ function initMap() {
     const drawingManager = new google.maps.drawing.DrawingManager({
       drawingControl: true,
       drawingControlOptions: {
-        position: google.maps.ControlPosition.TOP_CENTER,
+        position: google.maps.ControlPosition.TOP_LEFT,
         drawingModes: [google.maps.drawing.OverlayType.POLYGON],
       }, polygonOptions: polygonOntion("#800080")
     });
