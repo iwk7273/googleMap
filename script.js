@@ -1,5 +1,7 @@
 const spreadsheetId = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
 const sheetIdPolygon = 175522008
+const sheetIdCircle = 2091010733
+
 const apiKey = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
 const clientId = '804290644688-godfemc6ue7b06p9e5oqt2fhj2pgqnh0.apps.googleusercontent.com';
 const clientSecret = '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';
@@ -13,13 +15,13 @@ const pow = 8
 const zoomThreshold = 1; 
 
 let map;
-let markers = []
+let circles = []
 let Polygons = []
 
-let currentMarker = null;
+let currentCircle = null;
 let currentPolygon = null;
 
-let editingPin = null;
+let editingCircle = null;
 let editingPolygon = null;
 
 let currentInfoWindow = null
@@ -29,7 +31,7 @@ function initMap() {
         center: { lat: 35.681236, lng: 139.767125 },
         zoom: 10,
     });
-    let lastZoomLevel = map.getZoom();
+//    let lastZoomLevel = map.getZoom();
 
     map.addListener('click', (event) => {
         const latLng = event.latLng;
@@ -38,28 +40,29 @@ function initMap() {
         }
         showForm(latLng);
     });
-
+    /*
     map.addListener('zoom_changed', () => {
         const newZoomLevel = map.getZoom();
         //console.log(newZoomLevel)
         if (Math.abs(newZoomLevel - lastZoomLevel) >= zoomThreshold) {
             lastZoomLevel = newZoomLevel;
             const newScale = calculateScale(newZoomLevel);
-            updateMarkerScale(newScale);
+            updateCircleScale(newScale);
         }
     });
+    */
 
     document.getElementById('update-button').addEventListener('click', () => {
-        loadPins();
+        loadCircles();
         loadPolygon()
     });
 
-    //Marker
+    //Circle
     document.getElementById('cancel-button').addEventListener('click', cancelForm);
-    document.getElementById('submit-button').addEventListener('click', savePin);
+    document.getElementById('submit-button').addEventListener('click', saveCircle);
     //document.getElementById('cancel-button').addEventListener('click', hideForm);
 
-    loadPins();
+    loadCircles();
     loadPolygon()
 
     //Polygon
@@ -90,6 +93,8 @@ function initMap() {
         //savePolygon(polygon);
     })
 
+    
+
     //console.log(Polygons[0])
 }
 
@@ -105,23 +110,25 @@ function polygonOntion(color){
         zIndex: 1,
     }    
 }
+/*
 function calculateScale(zoomLevel) {
     return zoomLevel ** pow * size;
 }
 
-function updateMarkerScale(scale) {
-    markers.forEach(marker => {
-        const icon = marker.getIcon();
+function updateCircleScale(scale) {
+    circles.forEach(circle => {
+        const icon = circle.getIcon();
         icon.scale = scale;
-        marker.setIcon(icon);
+        circle.setIcon(icon);
     });
 }
+*/
 
 function cancelForm() {
     hideForm();
-    if (currentMarker) {
-        currentMarker.setMap(null);
-        currentMarker = null;
+    if (currentCircle) {
+        currentCircle.setMap(null);
+        currentCircle = null;
     }    
 }
 
@@ -152,17 +159,9 @@ function hideFormPolygon(){
 
 function showForm(latLng) {
     const form = document.getElementById('form');
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = ('0' + (now.getMonth() + 1)).slice(-2);
-    const day = ('0' + now.getDate()).slice(-2);
-    const hours = ('0' + now.getHours()).slice(-2);
-    const minutes = ('0' + now.getMinutes()).slice(-2);
-    const seconds = ('0' + now.getSeconds()).slice(-2);
-    const milliseconds = ('00' + now.getMilliseconds()).slice(-3);
-    const time = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}:${milliseconds}`;
+    const time = new Date().toLocaleString('ja-JP');
+    document.getElementById('time').value = time + ":" + (Math.floor(Math.random() * 900) + 100)
 
-    document.getElementById('time').value = time;
     form.style.display = 'block';
     form.style.left = `${latLng.x}px`;
     form.style.top = `${latLng.y}px`;
@@ -170,35 +169,42 @@ function showForm(latLng) {
     form.dataset.lng = latLng.lng();
 
     // 仮のピンを追加
-    if (currentMarker) {
-        currentMarker.setMap(null);
+    if (currentCircle) {
+        currentCircle.setMap(null);
+        currentCircle = null
     }
-    currentMarker = new google.maps.Marker({
-        position: latLng,
+    currentCircle = new google.maps.Circle({
+        center: latLng,
         map,
-        icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: 'gray',
-            fillOpacity: 0.6,
-            strokeWeight: 0,
-            scale: 10
-        }
+        strokeColor: "glay",
+        strokeOpacity: 0.8,
+        strokeWeight: 2,
+        fillColor: "glay",
+        fillOpacity: 0.35,
+        radius: 10
     });
 
-    editingPin = null;
+    editingCircle = null;
 }
 
 function showPolygonForm(latLng) {
     let memo = document.getElementById('memoPolygon').value
+    let time = new Date().toLocaleString('ja-JP');
     if(!memo){
         memo = ''
     }
     const form = document.getElementById('formPolygon');
-    document.getElementById('timePolygon').value = new Date().toLocaleString('ja-JP');
+    document.getElementById('timePolygon').value = time + ":" + (Math.floor(Math.random() * 900) + 100)
     form.style.display = 'block';
 }
 
-async function savePin() {
+async function saveCircle() {
+    
+    if (currentCircle) {
+        currentCircle.setMap(null);
+        currentCircle = null
+    }
+
     const time = document.getElementById('time').value;
     let memo = document.getElementById('memo').value;
     const count = '';
@@ -211,44 +217,35 @@ async function savePin() {
 
     const color = tag === '完了' ? 'purple' : tag === '予定' ? 'gray' : 'gray';
 
-    const zoomLevel = map.getZoom();
-    const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
-
-    if (editingPin) {
-        // Update existing marker
-        editingPin.setIcon({
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor: color,
-            fillOpacity: 0.6,
-            strokeWeight: 0,
-            scale: scale
+    if (editingCircle) {
+        // Update existing circle
+        editingCircle.setOptions({
+            strokeColor: color,
+            fillColor: color
         });
-        editingPin.setTitle(memo);
 
-        await updatePinInSheet(time, lat, lng, memo, count, tag);
+        await updateCircleInSheet(time, lat, lng, memo, count, tag);
     } else {
-        // Create new marker
-        const marker = new google.maps.Marker({
-            position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+        // Create new circle
+        const circle = new google.maps.Circle({
+            center: { lat: parseFloat(lat), lng: parseFloat(lng) },
             map,
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: color,
-                fillOpacity: 0.6,
-                strokeWeight: 0,
-                scale: scale
-            },
-            title: memo
+            strokeColor: color,
+            strokeOpacity: 0.8,
+            strokeWeight: 2,
+            fillColor: color,
+            fillOpacity: 0.35,
+            radius: 100
         });
 
-        marker.addListener('click', () => {
+        circle.addListener('click', () => {
             if(currentInfoWindow){
                 currentInfoWindow.close()
             }
-            showPinInfo(marker, { time, memo, count, tag });
+            showCircleInfo(circle, { time, memo, count, tag });
         });
 
-        markers.push(marker);
+        circles.push(circle);
 
         const accessToken = await getAccessToken();
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A1:append?valueInputOption=USER_ENTERED`;
@@ -268,7 +265,7 @@ async function savePin() {
             });
 
             if (!response.ok) {
-                throw new Error('Failed to save pin to spreadsheet');
+                throw new Error('Failed to save circle to spreadsheet');
             }
 
             hideForm();
@@ -365,7 +362,7 @@ async function savePolygon(){
             });
     
             if (!response.ok) {
-                throw new Error('Failed to save pin to spreadsheet');
+                throw new Error('Failed to save circle to spreadsheet');
             }
     
             hideFormPolygon();
@@ -375,7 +372,7 @@ async function savePolygon(){
     } 
 }
 
-async function updatePinInSheet(time, lat, lng, memo, count, tag) {
+async function updateCircleInSheet(time, lat, lng, memo, count, tag) {
     const accessToken = await getAccessToken();
     const range = `${sheetName}!A1:F`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
@@ -411,7 +408,7 @@ async function updatePinInSheet(time, lat, lng, memo, count, tag) {
             });
 
             if (!updateResponse.ok) {
-                throw new Error('Failed to update pin in spreadsheet');
+                throw new Error('Failed to update circle in spreadsheet');
             }
 
             hideForm();
@@ -456,7 +453,7 @@ async function updatePolygonInSheet(time, tag, memo){
             });
 
             if (!updateResponse.ok) {
-                throw new Error('Failed to update pin in spreadsheet');
+                throw new Error('Failed to update circle in spreadsheet');
             }
 
             hideFormPolygon();
@@ -466,14 +463,14 @@ async function updatePolygonInSheet(time, tag, memo){
     }
 }
 
-function showPinInfo(marker, data) {
+function showCircleInfo(circle, data) {
     const infoWindowContent = `
         <div>
             <p>時刻: ${data.time}</p>
             <p>メモ: ${data.memo}</p>
             <p>タグ: ${data.tag}</p>
-            <button onclick="editPin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()},'${data.memo}','${data.count}','${data.tag}')">編集</button>
-            <button onclick="deletePin('${data.time}', ${marker.getPosition().lat()}, ${marker.getPosition().lng()})">削除</button>
+            <button onclick="editCircle('${data.time}', ${circle.getCenter().lat()}, ${circle.getCenter().lng()},'${data.memo}','${data.count}','${data.tag}')">編集</button>
+            <button onclick="deleteCircle('${data.time}', ${circle.getCenter().lat()}, ${circle.getCenter().lng()})">削除</button>
         </div>
     `;
     
@@ -481,7 +478,8 @@ function showPinInfo(marker, data) {
         content: infoWindowContent
     });
     currentInfoWindow = infoWindow
-    currentInfoWindow.open(map, marker);
+    currentInfoWindow.setPosition(circle.getCenter())
+    currentInfoWindow.open(map, circle);
 }
 
 function showInfoWindowPolygon(polygon, data, latlng){
@@ -502,7 +500,7 @@ function showInfoWindowPolygon(polygon, data, latlng){
     currentInfoWindow.open(map, polygon);
 }
 
-async function editPin(time, lat, lng, memo, count, tag) {
+async function editCircle(time, lat, lng, memo, count, tag) {
     document.getElementById('time').value = time;
     document.getElementById('memo').value = memo;
     //document.getElementById('count').value = "";
@@ -513,7 +511,7 @@ async function editPin(time, lat, lng, memo, count, tag) {
     form.dataset.lat = lat;
     form.dataset.lng = lng;
 
-    editingPin = markers.find(marker => marker.getPosition().lat() === parseFloat(lat) && marker.getPosition().lng() === parseFloat(lng));
+    editingCircle = circles.find(circle => circle.getCenter().lat() === parseFloat(lat) && circle.getCenter().lng() === parseFloat(lng));
 }
 
 async function editPolygon(time, memo, tag){
@@ -541,7 +539,7 @@ function getIndexByKey(array, key) {
     return -1; // キーが見つからない場合、-1を返す
 }
 
-async function deletePin(time, lat, lng) {
+async function deleteCircle(time, lat, lng) {
     const accessToken = await getAccessToken();
     const range = `${sheetName}!A1:F`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
@@ -555,17 +553,29 @@ async function deletePin(time, lat, lng) {
         const rowIndex = data.values.findIndex(row => row[0] === time);
 
         if (rowIndex !== -1) {
-            const deleteUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${sheetName}!A${rowIndex + 1}:F${rowIndex + 1}:clear`;
+            const requests = [{
+                deleteDimension: {
+                    range: {
+                        sheetId: sheetIdCircle,
+                        dimension: 'ROWS',
+                        startIndex: rowIndex, // 0-based index
+                        endIndex: rowIndex + 1
+                    }
+                }
+            }];
+            const deleteUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`;
             const deleteResponse = await fetch(deleteUrl, {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${accessToken}` }
+                headers: { 'Authorization': `Bearer ${accessToken}` },
+                body: JSON.stringify({ requests })
             });
 
+
             if (deleteResponse.ok) {
-                const markerIndex = markers.findIndex(marker => marker.getPosition().lat() === parseFloat(lat) && marker.getPosition().lng() === parseFloat(lng));
-                if (markerIndex !== -1) {
-                    markers[markerIndex].setMap(null);
-                    markers.splice(markerIndex, 1);
+                const circleIndex = circles.findIndex(circle => circle.getCenter().lat() === parseFloat(lat) && circle.getCenter().lng() === parseFloat(lng));
+                if (circleIndex !== -1) {
+                    circles[circleIndex].setMap(null);
+                    circles.splice(circleIndex, 1);
                 }
             }
         }
@@ -618,7 +628,7 @@ async function deletePolygon(time) {
     }
 }
 
-async function loadPins() {
+async function loadCircles() {
     const accessToken = await getAccessToken();
     const range = `${sheetName}!A1:F`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
@@ -632,38 +642,37 @@ async function loadPins() {
         const data = await response.json();
 
         if (data.values && data.values.length > 1) {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
-
+            circles.forEach(circle => circle.setMap(null));
+            circles = [];
+            /*
             const zoomLevel = map.getZoom();
             const scale = zoomLevel ** pow * size; // 基本スケール値をズームレベルに合わせて調整
+            */
 
             for (let i = 1; i < data.values.length; i++) {
                 const row = data.values[i];
                 const [time, lat, lng, memo, count, tag] = row;
                 const color = tag === '完了' ? 'purple' : tag === '予定' ? 'gray' : 'gray';
 
-                const marker = new google.maps.Marker({
-                    position: { lat: parseFloat(lat), lng: parseFloat(lng) },
+                const circle = new google.maps.Circle({
+                    center: { lat: parseFloat(lat), lng: parseFloat(lng) },
                     map,
-                    icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: color,
-                        fillOpacity: 0.6,
-                        strokeWeight: 0,
-                        scale: scale
-                    },
-                    title: memo
+                    strokeColor: color,
+                    strokeOpacity: 0.8,
+                    strokeWeight: 2,
+                    fillColor: color,
+                    fillOpacity: 0.35,
+                    radius: 100
                 });
 
-                marker.addListener('click', () => {
+                google.maps.event.addListener(circle, 'click', () => {
                     if(currentInfoWindow){
                         currentInfoWindow.close()
                     }
-                    showPinInfo(marker, { time, memo, count, tag });
+                    showCircleInfo(circle, { time, memo, count, tag });
                 });
 
-                markers.push(marker);
+                circles.push(circle);
             }
         }
     } catch (error) {
