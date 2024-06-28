@@ -18,6 +18,8 @@ let map;
 let circles = []
 let Polygons = []
 
+let progress = [0, 0, 0, 0]
+
 let currentCircle = null;
 let currentPolygon = null;
 
@@ -26,7 +28,7 @@ let editingPolygon = null;
 
 let currentInfoWindow = null
 
-function initMap() {
+async function initMap() {
     map = new google.maps.Map(document.getElementById('map'), {
         center: { lat: 35.681236, lng: 139.767125 },
         zoom: 10,
@@ -52,9 +54,10 @@ function initMap() {
     });
     */
 
-    document.getElementById('update-button').addEventListener('click', () => {
-        loadCircles();
-        loadPolygon()
+    document.getElementById('update-button').addEventListener('click',  async () => {
+        await loadCircles();
+        await loadPolygon()
+        await updateProgress()
     });
 
     //Circle
@@ -62,8 +65,9 @@ function initMap() {
     document.getElementById('submit-button').addEventListener('click', saveCircle);
     //document.getElementById('cancel-button').addEventListener('click', hideForm);
 
-    loadCircles();
-    loadPolygon()
+    await loadCircles();
+    await loadPolygon()
+    await updateProgress()
 
     //Polygon
     document.getElementById('cancel-button-polygon').addEventListener('click', cancelFormPolygon);
@@ -96,6 +100,17 @@ function initMap() {
     
 
     //console.log(Polygons[0])
+}
+
+async function updateProgress(){
+    let done = progress[0] + progress[2]
+    let plan = progress[1] + progress[3]
+
+    let progressDone = document.getElementById('progressDone');
+    let progressPlan = document.getElementById('progressPlan');
+
+    progressDone.innerHTML = '完了: ' + done;
+    progressPlan.innerHTML = '予定: ' + plan;
 }
 
 function polygonOntion(color){
@@ -629,6 +644,9 @@ async function deletePolygon(time) {
 }
 
 async function loadCircles() {
+    progress[0] = 0
+    progress[1] = 0
+
     const accessToken = await getAccessToken();
     const range = `${sheetName}!A1:F`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
@@ -673,6 +691,11 @@ async function loadCircles() {
                 });
 
                 circles.push(circle);
+                if(tag == "完了"){
+                    progress[0] ++
+                } else {
+                    progress[1] ++
+                }
             }
         }
     } catch (error) {
@@ -681,6 +704,9 @@ async function loadCircles() {
 }
 
 async function loadPolygon(){
+    progress[2] = 0
+    progress[3] = 0
+
     const accessToken = await getAccessToken();
     const range = `${sheetPolygon}!A1:F`;
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`;
@@ -720,6 +746,11 @@ async function loadPolygon(){
                     }
                     showInfoWindowPolygon(polygon, {time,memo,tag}, event.latLng)
                 }) 
+                if(tag == "完了"){
+                    progress[2] ++
+                } else {
+                    progress[3] ++
+                }
             }
         }
         //console.log(Polygons)
