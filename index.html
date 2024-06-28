@@ -36,10 +36,10 @@
         }
         #update-button {
             position: absolute;
-            top: 10px;
+            top: 20px;
             right: 20px;
             z-index: 5;
-            font-size: 16px;
+            font-size: 18px;
         }
         #search-box {
             position: absolute;
@@ -49,6 +49,16 @@
             width: 240px;
             padding: 5px;
             font-size: 16px;
+        }
+        #progress {
+            position: absolute;
+            left: 12px;
+            bottom: 10%;
+            background-color: rgba(255, 255, 255, 1); /* 背景色と透明度 */
+            color: black; /* 文字色 */
+            padding: 5px; /* 内側の余白 */
+            margin: 0; /* 外側の余白 */
+            font-size: 15px;
         }
 </style>
     </style>
@@ -79,6 +89,10 @@
         </label>
         <button id="submit-button-polygon">送信</button>
         <button id="cancel-button-polygon">キャンセル</button>
+    </div>
+    <div id="progress">
+        <span id="progressDone">完了: </span>
+        <span id="progressPlan">予定: </span>
     </div>
     <div><br>【運営からのお知らせ】
         <p>確認団体ビラは、「政治活動」の扱いで配布しているもので、ポスティングのみOK、手配り配布はNGです。<br>
