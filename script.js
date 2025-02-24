@@ -5,7 +5,7 @@ const sheetIdCircle = 2091010733
 const apiKey = GOOGLE_API_KEY;
 const clientId = GOOGLE_CLIENT_ID;
 const clientSecret = GOOGLE_CLIENT_SECRET;
-const refreshToken = GOOGLE_CLIENT_SECRET;
+const refreshToken = GOOGLE_REFRESH_TOKEN;
 
 const sheetName = 'Sheet1';
 const sheetPolygon = 'Polygon'
