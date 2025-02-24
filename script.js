@@ -1,11 +1,11 @@
-const spreadsheetId = '1ZBvOjWsrj56JbJlAmI72G1h-w1LeJAzT3dxGya8w9uI';
+const spreadsheetId = SPREADSHEET_ID;
 const sheetIdPolygon = 175522008
 const sheetIdCircle = 2091010733
 
-const apiKey = 'AIzaSyBgSr0GH7RWsWcu5hR3ehk5P5ssyHzRLI0';
-const clientId = '804290644688-godfemc6ue7b06p9e5oqt2fhj2pgqnh0.apps.googleusercontent.com';
-const clientSecret = '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';
-const refreshToken = '1//0eB4LQQg3jSGRCgYIARAAGA4SNwF-L9Irsju_WwAkECjqOOiJukwNnQZvzvKh4xQyAL9-bvFGzUFCStH826eaNBh36m1KhbrNXqQ';
+const apiKey = GOOGLE_API_KEY;
+const clientId = GOOGLE_CLIENT_ID;
+const clientSecret = GOOGLE_CLIENT_SECRET;
+const refreshToken = GOOGLE_CLIENT_SECRET;
 
 const sheetName = 'Sheet1';
 const sheetPolygon = 'Polygon'
