@@ -1,11 +1,11 @@
-const spreadsheetId = ${secrets.SPREADSHEET_ID};
+const spreadsheetId = secrets.SPREADSHEET_ID;
 const sheetIdPolygon = 175522008
 const sheetIdCircle = 2091010733
 
-const apiKey = ${secrets.GOOGLE_API_KEY};
-const clientId = ${secrets.GOOGLE_CLIENT_ID};
-const clientSecret = ${secrets.GOOGLE_CLIENT_SECRET};
-const refreshToken = ${secrets.GOOGLE_REFRESH_TOKEN};
+const apiKey = secrets.GOOGLE_API_KEY;
+const clientId = secrets.GOOGLE_CLIENT_ID;
+const clientSecret = secrets.GOOGLE_CLIENT_SECRET;
+const refreshToken = secrets.GOOGLE_REFRESH_TOKEN;
 
 const sheetName = 'Sheet1';
 const sheetPolygon = 'Polygon'
